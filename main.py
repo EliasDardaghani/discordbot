@@ -1,22 +1,22 @@
 import discord
+import logging
 
 # https://discordpy.readthedocs.io/en/stable/api.html
 
 class DealsBot(discord.Client):
     async def on_ready(self):
-        print(f'Logged in as {self.user}')
+        logger.info(f'Logged in as {self.user}')
         for guild in client.guilds:
-            print(f'Connected to server: {guild}')
+            logger.info(f'Connected to server: {guild}')
+            for channel in guild.channels:
+                if 'annons' in channel.name and 'text' == channel.type.name:
+                    logger.info(f'Found channel for posting ads: {channel.name}')
+                    await channel.send('Testing annons channel')
 
-    # async def on_message(self, message):
-    #     print(f'Message from {message.author}: {message.content}')
-    #     if message.author == self.user:
-    #         return
-    #     await message.channel.send('Hello World!')
+intents = discord.Intents.default()
+intents.message_content = True
 
-# Not needed for now
-# intents = discord.Intents.default()
-# intents.message_content = True
-
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+logger = logging.getLogger('discord')
 client = DealsBot(intents=None)
-client.run('')
+client.run('', log_handler=handler, log_level=logging.INFO)

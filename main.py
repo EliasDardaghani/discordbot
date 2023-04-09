@@ -1,31 +1,64 @@
 import discord
 import logging
-from deals import DealsScraperCog
+from deals_scraper import DealsScraperCog
 from discord.ext import commands
+import configparser
+import os
+from dotenv import load_dotenv
+
+CONFIG = 'config.ini'
+CONFIG_DISCORD = 'Discord'
+CONFIG_DISCORD_SERVERS = 'servers'
+CONFIG_DISCORD_CHANNELS = 'channels'
+LOG_FILE = 'discord.log'
+LOGGER = 'discord'
+TOKEN = 'TOKEN'
 
 # https://discordpy.readthedocs.io/en/stable/api.html
 
 class DealsBot(commands.Bot):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, servers, channels, logger, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger = logging.getLogger('discord')
+        self.servers = servers
+        self.channels = channels
+        print(self.servers)
+        self.logger = logger
+        self.allowed_channels = []
 
     async def on_ready(self):
         self.logger.info(f'Logged in as {self.user}')
         for guild in self.guilds:
-            self.logger.info(f'Connected to server: {guild}')
-            for channel in guild.channels:
-                if 'annons' in channel.name and 'text' == channel.type.name:
-                    self.logger.info(f'Found channel for posting ads: {channel.name}')
-                    # await channel.send('Testing annons channel')
-                    await self.add_cog(DealsScraperCog(self, channel))
+            if guild.name in self.servers: # check if whitelisted server
+                self.logger.info(f'Connected to server: {guild}')
+                for channel in guild.channels:
+                    for c in self.channels:
+                        if c in channel.name and channel.type.name == 'text': # check if whitelisted channel
+                            self.logger.info(f'Found channel for posting deals: {channel.name}')
+                            # await channel.send('Successfully connected!')
+                            self.allowed_channels.append(channel)
+                            break
+        await self.add_cog(DealsScraperCog(self, self.allowed_channels))
 
 def main ():
-    intents = discord.Intents.default()
-    intents.message_content = True
-    handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
-    client = DealsBot(intents=None, command_prefix='!')    
-    client.run('', log_handler=handler, log_level=logging.INFO)
+    logger = logging.getLogger(LOGGER)
+    load_dotenv()
+    config = configparser.ConfigParser()
+    servers = []
+    channels = []
+    try:
+        config.read(CONFIG)
+        ss = config.get(CONFIG_DISCORD, CONFIG_DISCORD_SERVERS).split(',')
+        for s in ss:
+            servers.append(s.strip())
+        cc = config.get(CONFIG_DISCORD, CONFIG_DISCORD_CHANNELS).split(',')
+        for c in cc:
+            channels.append(c.strip())
+    except:
+        logger.info('Failed to parse config.ini')
+        exit(1)
+    handler = logging.FileHandler(filename=LOG_FILE, encoding='utf-8', mode='a')
+    client = DealsBot(servers, channels, logger, intents=None, command_prefix='!')    
+    client.run(os.getenv(TOKEN), log_handler=handler, log_level=logging.INFO)
 
 if __name__ == "__main__":
     main()

@@ -36,7 +36,12 @@ class Scrapers():
                 tmp = None
                 for i, n in enumerate(name_matches):
                     real_url = requests.get(url_matches[i]).url.split('?')[0]
-                    ad = Adealsweden(name_matches[i], ''.join(prices_matches[i]).strip(), real_url)
+                    if real_url == 'https://www.amazon.se/s':
+                        real_url = requests.get(url_matches[i]).url
+                    name_match = name_matches[i]
+                    if '&#038;' in name_match:
+                        name_match = name_match.replace('&#038;', '&')
+                    ad = Adealsweden(name_match, ''.join(prices_matches[i]).strip(), real_url)
                     if i == 0:
                         tmp = ad
                     if self.adealsweden_old.name == n:
@@ -44,8 +49,13 @@ class Scrapers():
                     self.adealsweden.append(ad)
                 self.adealsweden_old = tmp
             else:
+                if real_url == 'https://www.amazon.se/s':
+                    real_url = requests.get(url_matches[i]).url
                 real_url = requests.get(url_matches[0]).url.split('?')[0]
-                ad = Adealsweden(name_matches[0], ''.join(prices_matches[0]).strip(), real_url)
+                name_match = name_matches[i]
+                if '&#038;' in name_match:
+                    name_match = name_match.replace('&#038;', '&')
+                ad = Adealsweden(name_match, ''.join(prices_matches[0]).strip(), real_url)
                 self.adealsweden_old = ad
         self.logger.info(f'Scraped adealsweden.com: {self.adealsweden}')
         return self.adealsweden

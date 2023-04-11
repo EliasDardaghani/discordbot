@@ -33,7 +33,7 @@ class DealsBot(commands.Bot):
                     for c in self.channels:
                         if c in channel.name and channel.type.name == 'text': # check if whitelisted channel
                             self.logger.info(f'Found channel for posting deals: {channel.name}')
-                            # await channel.send('Successfully connected!')
+                            await channel.send('Successfully connected!')
                             self.allowed_channels.append(channel)
                             break
         await self.add_cog(DealsCog(self))

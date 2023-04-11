@@ -24,7 +24,7 @@ class DealsCog(commands.Cog):
             if self.scrapers.adealsweden_old:
                 for channel in self.bot.allowed_channels:
                     for adeal in adealsweden:
-                        # await channel.send(content=f'@everyone new deal from adealsweden.com\n{adeal.name}\n{adeal.price}\n{adeal.url}')
+                        await channel.send(content=f'@everyone new deal from adealsweden.com\n{adeal.name}\n{adeal.price}\n{adeal.url}')
                         await asyncio.sleep(2)
         except:
             self.logger.error(f'Failed to scrape: adealsweden.com')
@@ -36,7 +36,7 @@ class DealsCog(commands.Cog):
                 for channel in self.bot.allowed_channels:
                     for droid in swedroid:
                         url = droid.url.split('?')[0]
-                        # await channel.send(content=f'@everyone new deal from swedroid.se\n{url}')
+                        await channel.send(content=f'@everyone new deal from swedroid.se\n{url}')
                         await asyncio.sleep(2)
         except:
             self.logger.error(f'Failed to scrape: swedroid.se')

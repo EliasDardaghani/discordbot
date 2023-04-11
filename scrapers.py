@@ -1,7 +1,7 @@
 import requests
 import logging
 import re
-from models import Adealsweden
+from models import Adealsweden, Swedroid
 import os
 
 ADEALSWEDEN = 'https://www.adealsweden.com/deals/8/'
@@ -16,10 +16,13 @@ class Scrapers():
     def __init__(self):
         self.logger = logging.getLogger('discord')
         self.adealsweden = []
+        self.adealsweden_old = None
         self.swedroid = []
+        self.swedroid_old = None
 
     def scrape_adealsweden(self):
         self.logger.info('Scraping adealsweden')
+        self.adealsweden.clear()
         response = requests.get(ADEALSWEDEN)
         response_text = response.text
         name_pattern = r'<a\shref\=\"https\:\/\/www\.adealsweden\.com\/[\w\S]+\/\d+\/\"\starget.*>(.*)<'
@@ -29,27 +32,27 @@ class Scrapers():
         prices_matches = re.findall(price_pattern, response_text, re.MULTILINE)
         url_matches = re.findall(url_pattern, response_text, re.MULTILINE)
         if name_matches and prices_matches and url_matches:
-            if not self.adealsweden:
-                real_url = requests.get(url_matches[0]).url.split('?')[0]
-                self.adealsweden.append(Adealsweden(name_matches[0], ''.join(prices_matches[0]).strip(), real_url))
-            else:
-                i = 0
-                for adeal in self.adealsweden:
-                    if adeal.name in name_matches:
-                        i = name_matches.index(adeal.name)
+            if self.adealsweden_old:
+                tmp = None
+                for i, n in enumerate(name_matches):
+                    real_url = requests.get(url_matches[i]).url.split('?')[0]
+                    ad = Adealsweden(name_matches[i], ''.join(prices_matches[i]).strip(), real_url)
+                    if i == 0:
+                        tmp = ad
+                    if self.adealsweden_old.name == n:
                         break
-                self.adealsweden = self.adealsweden[:1]
-                name_matches = name_matches[:i]
-                prices_matches = prices_matches[:i]
-                url_matches = url_matches[:i]
-                for j, _ in enumerate(name_matches):
-                    real_url = requests.get(url_matches[j]).url.split('?')[0]
-                    self.adealsweden.append(Adealsweden(name_matches[j], ''.join(prices_matches[j]).strip(), real_url))
-            self.logger.info(f'Scraped adealsweden: {self.adealsweden}')
+                    self.adealsweden.append(ad)
+                self.adealsweden_old = tmp
+            else:
+                real_url = requests.get(url_matches[0]).url.split('?')[0]
+                ad = Adealsweden(name_matches[0], ''.join(prices_matches[0]).strip(), real_url)
+                self.adealsweden_old = ad
+        self.logger.info(f'Scraped adealsweden.com: {self.adealsweden}')
         return self.adealsweden
 
     def scrape_swedroid(self):
         self.logger.info('Scraping swedroid')
+        self.swedroid.clear()
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         session = requests.Session()
         session.get('https://swedroid.se/forum/login')
@@ -59,10 +62,23 @@ class Scrapers():
         last_pattern = r'data\-last\=\"(\d+)\"'
         last_matches = re.findall(last_pattern, response_text, re.MULTILINE)
         if last_matches:
-            print(SWEDROID + f'page-{last_matches[0]}')
             response = session.get(SWEDROID + f'page-{last_matches[0]}')
             response_text = response.text
-            with open('test.txt', 'w') as f:
-                f.write(response_text)
-            print('done')
+            url_pattern = r'\<a\shref\=\"(https://www\.amazon\.se.*)\"\starget'
+            url_matches = re.findall(url_pattern, response_text, re.MULTILINE)
+            if url_matches:
+                if self.swedroid_old:
+                    tmp = None
+                    for i, u in reversed(list(enumerate(url_matches))):
+                        droid = Swedroid(url=url_matches[i])
+                        if i == len(url_matches)-1:
+                            tmp = droid
+                        if self.swedroid_old.url == u:
+                            break
+                        self.swedroid.append(droid)
+                    self.swedroid_old = tmp
+                else:
+                    droid = Swedroid(url=url_matches[-1])
+                    self.swedroid_old = droid
+        self.logger.info(f'Scraped swedroid.se: {self.swedroid}')
         return self.swedroid

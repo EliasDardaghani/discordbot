@@ -49,10 +49,10 @@ class Scrapers():
                     self.adealsweden.append(ad)
                 self.adealsweden_old = tmp
             else:
-                if real_url == 'https://www.amazon.se/s':
-                    real_url = requests.get(url_matches[i]).url
                 real_url = requests.get(url_matches[0]).url.split('?')[0]
-                name_match = name_matches[i]
+                if real_url == 'https://www.amazon.se/s':
+                    real_url = requests.get(url_matches[0]).url
+                name_match = name_matches[0]
                 if '&#038;' in name_match:
                     name_match = name_match.replace('&#038;', '&')
                 ad = Adealsweden(name_match, ''.join(prices_matches[0]).strip(), real_url)

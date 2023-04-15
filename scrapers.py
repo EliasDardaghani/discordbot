@@ -9,7 +9,6 @@ SWEDROID_USERNAME = 'SWEDROID_USERNAME'
 SWEDROID_PASSWORD = 'SWEDROID_PASSWORD'
 SWEDROID_LOGIN = 'https://swedroid.se/forum/login/login'
 SWEDROID = 'https://swedroid.se/forum/threads/fyndtipstraden-amazon-se-inga-diskussioner.186347/'
-PRISRAS = 'https://prisras.se/'
 
 class Scrapers():
 
@@ -38,13 +37,15 @@ class Scrapers():
                     real_url = requests.get(url_matches[i]).url.split('?')[0]
                     if real_url == 'https://www.amazon.se/s':
                         real_url = requests.get(url_matches[i]).url
-                    name_match = name_matches[i]
+                    name_match = n
                     if '&#038;' in name_match:
                         name_match = name_match.replace('&#038;', '&')
+                    if '&#8211;' in name_match:
+                        name_match = name_match.replace('&#8211;', '-')
                     ad = Adealsweden(name_match, ''.join(prices_matches[i]).strip(), real_url)
                     if i == 0:
                         tmp = ad
-                    if self.adealsweden_old.name == n:
+                    if self.adealsweden_old.name == name_match:
                         break
                     self.adealsweden.append(ad)
                 self.adealsweden_old = tmp
@@ -55,6 +56,8 @@ class Scrapers():
                 name_match = name_matches[0]
                 if '&#038;' in name_match:
                     name_match = name_match.replace('&#038;', '&')
+                if '&#8211;' in name_match:
+                    name_match = name_match.replace('&#8211;', '-')
                 ad = Adealsweden(name_match, ''.join(prices_matches[0]).strip(), real_url)
                 self.adealsweden_old = ad
         self.logger.info(f'Scraped adealsweden.com: {self.adealsweden}')
